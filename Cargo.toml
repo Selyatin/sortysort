@@ -1,8 +1,8 @@
 [package]
-name = "eframe_template"
+name = "sortysort"
 version = "0.1.0"
-authors = ["Emil Ernerfeldt <emilernerfeldt@gmail.com>"]
-edition = "2018"
+authors = ["Selyatin Ismet <selyatinismet@gmail.com>"]
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,16 +10,17 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eframe = "0.15.0" # Gives us egui, epi and web+native backends
+eframe = "0.15.0"
 
-serde = { version = "1", features = ["derive"], optional = true }
+[target.'cfg(not(target_family =  "wasm"))'.dependencies]
+rand = "0.8.4"
 
-[features]
-default = []
-persistence = ["eframe/persistence", "serde"] # Enable if you want to persist app state on shutdown
+[target.'cfg(target_family = "wasm")'.dependencies]
+js-sys = "0.3.55"
 
 [profile.release]
 opt-level = 2 # fast and small wasm
+lto = "fat"
 
 [patch.crates-io]
 
