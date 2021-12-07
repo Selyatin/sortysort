@@ -34,7 +34,6 @@ pub struct App {
     line_width: f32,
     lines_len: usize,
     index: usize,
-    sorted: bool,
     sorting: bool,
     available_size: Vec2
 }
@@ -46,7 +45,6 @@ impl Default for App {
             line_width: 0.0,
             lines_len: 100,
             sorting: false,
-            sorted: false,
             index: 1,
             available_size: Vec2::default()
         }
@@ -64,9 +62,7 @@ impl App {
         let second = self.index;
 
         if self.lines[second] < self.lines[first] {
-            let temp = self.lines[first];
-            self.lines[first] = self.lines[second];
-            self.lines[second] = temp;
+            self.lines.swap(first, second);
             if self.index != 1 {
                 self.index = self.index.wrapping_sub(1);
             }
@@ -95,7 +91,7 @@ impl epi::App for App {
                 self.available_size = available_size;
             }
 
-            let (mut painter_response, painter) = ui.allocate_painter(
+            let (_painter_response, painter) = ui.allocate_painter(
                 available_size,
                 Sense {
                     click: false,
