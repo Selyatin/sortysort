@@ -1,6 +1,6 @@
 # Sortysort
 
-## Try it in your browser from [here](https://selyatin.github.io/sortysort)
+## Try it in your browser from [here](https://selyatin.github.io/sortysort/docs)
 
 ## Testing locally
 
