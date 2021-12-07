@@ -1,6 +1,8 @@
 # Sortysort
 
-## Try it in your browser from [here](https://selyatin.github.io/sortysort/docs)
+A blazingly fast Insertion Sort visualizer built with [Rust](https://www.rust-lang.org/) and [WASM](https://webassembly.org/)
+
+## Try it in your browser from [here](https://selyatin.github.io/sortysort)
 
 ## Testing locally
 
