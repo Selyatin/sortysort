@@ -4,6 +4,8 @@ A blazingly fast Insertion Sort visualizer built with [Rust](https://www.rust-la
 
 ## Try it in your browser from [here](https://selyatin.github.io/sortysort)
 
+![output](https://user-images.githubusercontent.com/50295732/144990763-ba068a51-6108-4952-b218-9c3398f6498f.gif)
+
 ## Testing locally
 
 `cargo run --release`
