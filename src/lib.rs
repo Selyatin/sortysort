@@ -35,7 +35,8 @@ pub struct App {
     lines_len: usize,
     index: usize,
     sorting: bool,
-    available_size: Vec2
+    available_size: Vec2,
+    speed: usize,
 }
 
 impl Default for App {
@@ -46,29 +47,32 @@ impl Default for App {
             lines_len: 100,
             sorting: false,
             index: 1,
-            available_size: Vec2::default()
+            available_size: Vec2::default(),
+            speed: 1,
         }
     }
 }
 
 impl App {
-    fn insertion_sort(&mut self){
-        if self.index == self.lines.len() {
-            self.sorting = false;
-            return;
-        }
-        
-        let first = self.index - 1;
-        let second = self.index;
-
-        if self.lines[second] < self.lines[first] {
-            self.lines.swap(first, second);
-            if self.index != 1 {
-                self.index = self.index.wrapping_sub(1);
+    fn insertion_sort(&mut self) {
+        for _ in 0..=self.speed {
+            if self.index == self.lines.len() {
+                self.sorting = false;
+                return;
             }
-            return;
+
+            let first = self.index - 1;
+            let second = self.index;
+
+            if self.lines[second] < self.lines[first] {
+                self.lines.swap(first, second);
+                if self.index != 1 {
+                    self.index = self.index.wrapping_sub(1);
+                }
+                continue;
+            }
+            self.index += 1;
         }
-        self.index += 1;
     }
 }
 
@@ -84,7 +88,7 @@ impl epi::App for App {
     fn update(&mut self, ctx: &CtxRef, _frame: &mut epi::Frame<'_>) {
         CentralPanel::default().show(ctx, |ui| {
             let available_size = ui.available_size();
-            
+
             if available_size != self.available_size || self.lines_len != self.lines.len() {
                 self.lines = get_randomized_f32_vec(available_size.y, self.lines_len);
                 self.line_width = available_size.x / self.lines_len as f32;
@@ -102,7 +106,7 @@ impl epi::App for App {
 
             if self.sorting {
                 self.insertion_sort();
-                ctx.request_repaint(); 
+                ctx.request_repaint();
             }
 
             let width_with_gap = self.line_width - 2.0;
@@ -120,7 +124,7 @@ impl epi::App for App {
                 ));
             }
         });
-         
+
         containers::panel::TopBottomPanel::bottom("bottom").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("Sort").clicked() {
@@ -130,9 +134,16 @@ impl epi::App for App {
                 if ui.button("Randomize").clicked() {
                     self.available_size = Vec2::default();
                 }
-                ui.add(Slider::new(&mut self.lines_len, 10..=1000)
-                    .logarithmic(true)
-                    .text("Lines"));
+                ui.add(
+                    Slider::new(&mut self.lines_len, 10..=1000)
+                        .logarithmic(true)
+                        .text("Lines"),
+                );
+                ui.add(
+                    Slider::new(&mut self.speed, 1..=20000)
+                        .logarithmic(true)
+                        .text("Speed"),
+                );
             });
         });
     }
