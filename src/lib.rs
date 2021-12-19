@@ -5,6 +5,7 @@ use js_sys::Math;
 use rand::{thread_rng, Rng};
 
 use eframe::{egui::*, epi};
+use std::collections::VecDeque;
 
 #[cfg(target_family = "wasm")]
 fn get_randomized_f32_vec(max_size: f32, amount: usize) -> Vec<f32> {
@@ -29,14 +30,23 @@ fn get_randomized_f32_vec(max_size: f32, amount: usize) -> Vec<f32> {
     vec
 }
 
+#[derive(Debug, Eq, PartialEq)]
+enum Algorithm {
+    Quick,
+    Insertion,
+}
+
 pub struct App {
     lines: Vec<f32>,
     line_width: f32,
     lines_len: usize,
     index: usize,
+    // (low, high, pivot)
+    sub_ranges: VecDeque<(usize, usize, usize, usize)>,
     sorting: bool,
     available_size: Vec2,
     speed: usize,
+    algorithm: Algorithm,
 }
 
 impl Default for App {
@@ -47,15 +57,17 @@ impl Default for App {
             lines_len: 100,
             sorting: false,
             index: 1,
+            sub_ranges: VecDeque::new(),
             available_size: Vec2::default(),
             speed: 1,
+            algorithm: Algorithm::Insertion,
         }
     }
 }
 
 impl App {
     fn insertion_sort(&mut self) {
-        for _ in 0..=self.speed {
+        for _ in 0..self.speed {
             if self.index == self.lines.len() {
                 self.sorting = false;
                 return;
@@ -72,6 +84,44 @@ impl App {
                 continue;
             }
             self.index += 1;
+        }
+    }
+
+    fn quick_sort(&mut self) {
+        for _ in 0..self.speed {
+            let (low, high, i, j) = match self.sub_ranges.get(0) {
+                Some(tuple) => *tuple,
+                None => {
+                    return self.sorting = false;
+                }
+            };
+
+            let pivot = self.lines[high];
+
+            if low >= high {
+                self.sub_ranges.pop_front();
+                continue;
+            }
+
+            if j < high {
+                if self.lines[j] <= pivot {
+                    self.lines.swap(i, j);
+                    self.sub_ranges[0].2 += 1;
+                }
+                self.sub_ranges[0].3 += 1;
+                continue;
+            }
+
+            self.lines.swap(i, high);
+            self.sub_ranges.pop_front();
+
+            if i > 0 {
+                self.sub_ranges.push_front((low, i - 1, low, low));
+            }
+
+            if i < high {
+                self.sub_ranges.push_back((i + 1, high, i + 1, i + 1));
+            }
         }
     }
 }
@@ -93,6 +143,15 @@ impl epi::App for App {
                 self.lines = get_randomized_f32_vec(available_size.y, self.lines_len);
                 self.line_width = available_size.x / self.lines_len as f32;
                 self.available_size = available_size;
+                self.sub_ranges.clear();
+                match self.algorithm {
+                    Algorithm::Quick => {
+                        self.sub_ranges.push_back((0, self.lines.len() - 1, 0, 0));
+                    }
+                    Algorithm::Insertion => {
+                        self.index = 1;
+                    }
+                };
             }
 
             let (_painter_response, painter) = ui.allocate_painter(
@@ -105,7 +164,10 @@ impl epi::App for App {
             );
 
             if self.sorting {
-                self.insertion_sort();
+                match self.algorithm {
+                    Algorithm::Quick => self.quick_sort(),
+                    Algorithm::Insertion => self.insertion_sort(),
+                };
                 ctx.request_repaint();
             }
 
@@ -113,11 +175,24 @@ impl epi::App for App {
 
             for (i, y) in self.lines.iter().enumerate() {
                 let x = i as f32 * self.line_width;
-                let color = if self.index == i {
-                    Color32::RED
-                } else {
-                    Color32::LIGHT_BLUE
+
+                let mut color = Color32::LIGHT_BLUE;
+
+                match self.algorithm {
+                    Algorithm::Quick => {
+                        if let Some((_, _, n, j)) = self.sub_ranges.get(0) {
+                            if i == *n || i == *j {
+                                color = Color32::RED;
+                            }
+                        }
+                    }
+                    Algorithm::Insertion => {
+                        if self.index == i {
+                            color = Color32::RED
+                        }
+                    }
                 };
+
                 painter.add(Shape::line_segment(
                     [Pos2::new(x, 0.0), Pos2::new(x, *y)],
                     Stroke::new(width_with_gap, color),
@@ -130,6 +205,7 @@ impl epi::App for App {
                 if ui.button("Sort").clicked() {
                     self.sorting = true;
                     self.index = 1;
+                    self.sub_ranges.push_back((0, self.lines.len() - 1, 0, 0));
                 }
                 if ui.button("Randomize").clicked() {
                     self.available_size = Vec2::default();
@@ -144,6 +220,9 @@ impl epi::App for App {
                         .logarithmic(true)
                         .text("Speed"),
                 );
+                ui.radio_value(&mut self.algorithm, Algorithm::Insertion, "Insertion Sort");
+                ui.radio_value(&mut self.algorithm, Algorithm::Quick, "Quick Sort");
+                ui.label("Algorithm");
             });
         });
     }
